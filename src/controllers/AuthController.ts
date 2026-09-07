@@ -1,5 +1,7 @@
 import { NextFunction, Request, Response } from "express";
 
+import { AuthResponseDTO } from "../dtos/auth/AuthResponseDTO";
+import { LoginDTO } from "../dtos/auth/LoginDTO";
 import { RegisterUserDTO } from "../dtos/auth/RegisterUserDTO";
 import { UserResponseDTO } from "../dtos/user/UserResponseDTO";
 import { AuthService } from "../services/AuthService";
@@ -22,6 +24,22 @@ export class AuthController {
       );
 
       response.status(201).json(user);
+    } catch (error: unknown) {
+      next(error);
+    }
+  };
+
+  public login = async (
+    request: Request<Record<string, never>, AuthResponseDTO, LoginDTO>,
+    response: Response<AuthResponseDTO>,
+    next: NextFunction,
+  ): Promise<void> => {
+    try {
+      const result: AuthResponseDTO = await this.authService.login(
+        request.body,
+      );
+
+      response.status(200).json(result);
     } catch (error: unknown) {
       next(error);
     }

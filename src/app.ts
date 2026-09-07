@@ -1,5 +1,6 @@
 import express, { Application, Request, Response } from "express";
 import authRoutes from "./routes/auth.routes";
+import { errorMiddleware } from "./middlewares/error.middleware";
 
 const app: Application = express();
 
@@ -12,5 +13,7 @@ app.get("/health", (_request: Request, response: Response): Response => {
     message: "MedClinic API está em funcionamento",
   });
 });
+
+app.use(errorMiddleware);
 
 export default app;

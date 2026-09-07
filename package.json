@@ -1,15 +1,18 @@
 {
   "name": "medclinic-api",
   "version": "1.0.0",
-  "description": "",
+  "description": "API para o gerenciamento de uma clínica médica de pequeno porte.",
   "main": "index.js",
   "scripts": {
     "dev": "tsx watch src/server.ts",
     "build": "tsc",
-    "start": "node dist/server.js"
+    "start": "node dist/server.js",
+    "migration:generate": "tsx ./node_modules/typeorm/cli.js migration:generate -d src/database/data-source.ts",
+    "migration:run": "tsx ./node_modules/typeorm/cli.js migration:run -d src/database/data-source.ts",
+    "migration:revert": "tsx ./node_modules/typeorm/cli.js migration:revert -d src/database/data-source.ts"
   },
   "keywords": [],
-  "author": "",
+  "author": "Lucas Bruno da Costa Mafra",
   "license": "ISC",
   "type": "commonjs",
   "devDependencies": {

@@ -1,8 +1,10 @@
 import { Repository } from "typeorm";
 
 import { AppDataSource } from "../database/data-source";
+
 import { RegisterUserDTO } from "../dtos/auth/RegisterUserDTO";
-import { User } from "../entities/User";
+
+import { User, UserRole } from "../entities/User";
 
 export class UserRepository {
   private readonly repository: Repository<User>;
@@ -17,6 +19,12 @@ export class UserRepository {
     });
   }
 
+  public async findById(id: string): Promise<User | null> {
+    return this.repository.findOne({
+      where: { id },
+    });
+  }
+
   public async create(
     data: RegisterUserDTO,
     passwordHash: string,
@@ -25,7 +33,7 @@ export class UserRepository {
       name: data.name,
       email: data.email,
       passwordHash,
-      role: data.role,
+      role: UserRole.ATTENDANT,
     });
 
     return this.repository.save(user);

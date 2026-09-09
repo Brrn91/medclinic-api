@@ -2,7 +2,7 @@ import { AuthResponseDTO } from "../dtos/auth/AuthResponseDTO";
 import { LoginDTO } from "../dtos/auth/LoginDTO";
 import { RegisterUserDTO } from "../dtos/auth/RegisterUserDTO";
 import { UserResponseDTO } from "../dtos/user/UserResponseDTO";
-import { User, UserRole } from "../entities/User";
+import { User } from "../entities/User";
 import { AppError } from "../errors/AppError";
 import { UserRepository } from "../repositories/UserRepository";
 import { generateToken } from "../utils/jwt";
@@ -19,9 +19,8 @@ export class AuthService {
     const name: string | undefined = data.name?.trim();
     const email: string | undefined = data.email?.trim().toLowerCase();
     const password: string | undefined = data.password;
-    const role: UserRole | undefined = data.role;
 
-    if (!name || !email || !password || !role) {
+    if (!name || !email || !password) {
       throw new AppError("Todos os campos são obrigatórios", 400);
     }
 
@@ -31,10 +30,6 @@ export class AuthService {
 
     if (password.length < 8) {
       throw new AppError("A senha deve possuir pelo menos 8 caracteres", 400);
-    }
-
-    if (!Object.values(UserRole).includes(role)) {
-      throw new AppError("Perfil de acesso inválido", 400);
     }
 
     const existingUser: User | null =
@@ -51,7 +46,6 @@ export class AuthService {
         name,
         email,
         password,
-        role,
       },
       passwordHash,
     );

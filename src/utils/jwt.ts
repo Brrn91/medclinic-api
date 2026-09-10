@@ -15,3 +15,7 @@ export function generateToken(payload: AuthTokenPayload): string {
 
   return jwt.sign(payload, env.jwtSecret, options);
 }
+
+export function verifyToken(token: string): AuthTokenPayload {
+  return jwt.verify(token, env.jwtSecret) as AuthTokenPayload;
+}

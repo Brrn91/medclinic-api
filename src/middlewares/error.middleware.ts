@@ -7,6 +7,17 @@ interface ErrorResponse {
   message: string;
 }
 
+interface JsonParseError extends SyntaxError {
+  status?: number;
+  statusCode?: number;
+  type?: string;
+  body?: unknown;
+}
+
+function isJsonParseError(error: unknown): error is JsonParseError {
+  return error instanceof SyntaxError && "status" in error && "body" in error;
+}
+
 export function errorMiddleware(
   error: unknown,
   _request: Request,
@@ -17,6 +28,13 @@ export function errorMiddleware(
     return response.status(error.statusCode).json({
       status: "error",
       message: error.message,
+    });
+  }
+
+  if (isJsonParseError(error)) {
+    return response.status(400).json({
+      status: "error",
+      message: "Corpo da requisição em formato JSON inválido.",
     });
   }
 

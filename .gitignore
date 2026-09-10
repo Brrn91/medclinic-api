@@ -1,5 +1,3 @@
 node_modules
 dist
 .env
-**/medclinic-collection.json
-**/medclinic-environment.json

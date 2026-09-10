@@ -63,13 +63,15 @@ cd medclinic-api
 npm install
 ```
 
-2. Copie o arquivo de exemplo de variáveis de ambiente e preencha com suas credenciais:
+> **Nota:** o `npm install` pode exibir um aviso do tipo `allow-scripts` referente aos pacotes `bcrypt` e `esbuild` (scripts nativos de instalação bloqueados por política de segurança do npm). Isso não impede o funcionamento da aplicação, pois o `bcrypt` utiliza um binário pré-compilado. Caso ocorra algum erro relacionado a hash de senha, rode `npm approve-scripts bcrypt` e instale novamente.
+
+1. Copie o arquivo de exemplo de variáveis de ambiente e preencha com suas credenciais:
 
 ```bash
 cp .env.example .env
 ```
 
-3. Edite o `.env` com os dados do seu ambiente local (host, porta, usuário e senha do PostgreSQL, nome do banco, segredo JWT e tempo de expiração do token).
+1. Edite o `.env` com os dados do seu ambiente local (host, porta, usuário e senha do PostgreSQL, nome do banco, segredo JWT e tempo de expiração do token).
 
 ## Configuração do banco de dados
 
@@ -79,7 +81,7 @@ cp .env.example .env
 psql -U postgres -c "CREATE DATABASE medclinic;"
 ```
 
-2. Execute as migrations para criar as tabelas:
+1. Execute as migrations para criar as tabelas:
 
 ```bash
 npm run migration:run
@@ -196,12 +198,6 @@ Endpoint de verificação de disponibilidade da API (não exige autenticação).
 | `npm run migration:run`      | Executa as migrations pendentes                             |
 | `npm run migration:revert`   | Reverte a última migration                                  |
 | `npm run migration:generate` | Gera uma nova migration a partir das entidades              |
-
-## Autor
-
-Lucas Bruno da Costa Mafra| Executa as migrations pendentes |
-| `npm run migration:revert` | Reverte a última migration |
-| `npm run migration:generate` | Gera uma nova migration a partir das entidades |
 
 ## Autor
 

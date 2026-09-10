@@ -1,25 +1,35 @@
 {
   "name": "medclinic-api",
   "version": "1.0.0",
-  "description": "",
+  "description": "API para o gerenciamento de uma clínica médica de pequeno porte.",
   "main": "index.js",
   "scripts": {
     "dev": "tsx watch src/server.ts",
     "build": "tsc",
-    "start": "node dist/server.js"
+    "start": "node dist/server.js",
+    "migration:generate": "tsx ./node_modules/typeorm/cli.js migration:generate -d src/database/data-source.ts",
+    "migration:run": "tsx ./node_modules/typeorm/cli.js migration:run -d src/database/data-source.ts",
+    "migration:revert": "tsx ./node_modules/typeorm/cli.js migration:revert -d src/database/data-source.ts"
   },
   "keywords": [],
-  "author": "",
+  "author": "Lucas Bruno da Costa Mafra",
   "license": "ISC",
   "type": "commonjs",
   "devDependencies": {
+    "@types/bcrypt": "^6.0.0",
     "@types/express": "^5.0.6",
+    "@types/jsonwebtoken": "^9.0.10",
     "@types/node": "^26.4.1",
     "tsx": "^4.23.13",
     "typescript": "^7.0.2"
   },
   "dependencies": {
+    "bcrypt": "^6.0.0",
     "dotenv": "^17.4.2",
-    "express": "^5.2.1"
+    "express": "^5.2.1",
+    "jsonwebtoken": "^9.0.3",
+    "pg": "^8.23.0",
+    "reflect-metadata": "^0.2.2",
+    "typeorm": "^1.1.1"
   }
 }

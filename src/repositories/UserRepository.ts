@@ -26,14 +26,15 @@ export class UserRepository {
   }
 
   public async create(
-    data: RegisterUserDTO,
+    data: Pick<RegisterUserDTO, "name" | "email">,
     passwordHash: string,
+    role: UserRole = UserRole.ATTENDANT,
   ): Promise<User> {
     const user: User = this.repository.create({
       name: data.name,
       email: data.email,
       passwordHash,
-      role: UserRole.ATTENDANT,
+      role,
     });
 
     return this.repository.save(user);

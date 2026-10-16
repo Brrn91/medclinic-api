@@ -10,6 +10,10 @@ interface EnvironmentVariables {
   dbPassword: string;
   jwtSecret: string;
   jwtExpiresIn: string;
+  corsOrigins: string[];
+  rateLimitWindowMs: number;
+  rateLimitMax: number;
+  authRateLimitMax: number;
 }
 
 const LOG_LEVELS = ["error", "warn", "info", "http", "debug"] as const;
@@ -51,6 +55,37 @@ function getPort(name: string): number {
   return value;
 }
 
+function getPositiveInt(name: string, fallback: number): number {
+  const raw: string | undefined = process.env[name];
+
+  if (raw === undefined || raw === "") {
+    return fallback;
+  }
+
+  const value: number = Number(raw);
+
+  if (!Number.isInteger(value) || value < 1) {
+    throw new Error(`A variável ${name} deve ser um inteiro positivo`);
+  }
+
+  return value;
+}
+
+function getOrigins(name: string): string[] {
+  const origins: string[] = getRequiredEnv(name)
+    .split(",")
+    .map((origin: string): string => origin.trim())
+    .filter((origin: string): boolean => origin.length > 0);
+
+  if (origins.length === 0 || origins.includes("*")) {
+    throw new Error(
+      `A variável ${name} deve listar origens explícitas, sem "*"`,
+    );
+  }
+
+  return origins;
+}
+
 export const env: EnvironmentVariables = {
   logLevel: getLogLevel("LOG_LEVEL", "info"),
   port: getPort("PORT"),
@@ -61,4 +96,8 @@ export const env: EnvironmentVariables = {
   dbPassword: getRequiredEnv("DB_PASSWORD"),
   jwtSecret: getRequiredEnv("JWT_SECRET"),
   jwtExpiresIn: getRequiredEnv("JWT_EXPIRES_IN"),
+  corsOrigins: getOrigins("CORS_ORIGINS"),
+  rateLimitWindowMs: getPositiveInt("RATE_LIMIT_WINDOW_MS", 900_000),
+  rateLimitMax: getPositiveInt("RATE_LIMIT_MAX", 100),
+  authRateLimitMax: getPositiveInt("AUTH_RATE_LIMIT_MAX", 10),
 };

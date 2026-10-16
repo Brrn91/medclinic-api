@@ -46,7 +46,6 @@ export class AuthService {
       {
         name,
         email,
-        password,
       },
       passwordHash,
     );

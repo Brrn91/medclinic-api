@@ -1,11 +1,13 @@
 import express, { Application, Request, Response } from "express";
 import { errorMiddleware } from "./middlewares/error.middleware";
+import { requestLogger } from "./middlewares/request-logger.middleware";
+import adminRoutes from "./routes/admin.routes";
 import authRoutes from "./routes/auth.routes";
 import userRoutes from "./routes/user.routes";
-import adminRoutes from "./routes/admin.routes";
 
 const app: Application = express();
 
+app.use(requestLogger);
 app.use(express.json());
 app.use("/auth", authRoutes);
 app.use("/users", userRoutes);

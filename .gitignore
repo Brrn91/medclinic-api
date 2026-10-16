@@ -2,3 +2,4 @@ node_modules
 dist
 .env
 MedClinic API
+logs/

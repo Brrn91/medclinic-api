@@ -1,19 +1,25 @@
 import app from "./app";
 import { env } from "./config/env";
+import { logger } from "./config/logger";
 import { AppDataSource } from "./database/data-source";
+import { getErrorDetails } from "./utils/error-details";
 
 async function startServer(): Promise<void> {
   try {
     await AppDataSource.initialize();
 
-    console.log("Conexão com PostgreSQL estabelecida");
+    logger.info("Conexão com PostgreSQL estabelecida");
 
     app.listen(env.port, (): void => {
-      console.log(`MedClinic API está executando na porta ${env.port}`);
+      logger.info(`MedClinic API está executando na porta ${env.port}`);
     });
   } catch (error: unknown) {
-    console.error("Falha ao iniciar a aplicação:", error);
-    process.exit(1);
+    logger.error("Falha ao iniciar a aplicação", getErrorDetails(error));
+
+    logger.on("finish", (): void => {
+      process.exit(1);
+    });
+    logger.end();
   }
 }
 

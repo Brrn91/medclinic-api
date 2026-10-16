@@ -14,6 +14,9 @@ interface EnvironmentVariables {
   rateLimitWindowMs: number;
   rateLimitMax: number;
   authRateLimitMax: number;
+  seedAdminName: string | undefined;
+  seedAdminEmail: string | undefined;
+  seedAdminPassword: string | undefined;
 }
 
 const LOG_LEVELS = ["error", "warn", "info", "http", "debug"] as const;
@@ -31,6 +34,12 @@ function getRequiredEnv(name: string): string {
   }
 
   return value;
+}
+
+function getOptionalEnv(name: string): string | undefined {
+  const value: string | undefined = process.env[name];
+
+  return value && value.length > 0 ? value : undefined;
 }
 
 function getLogLevel(name: string, fallback: LogLevel): LogLevel {
@@ -100,4 +109,7 @@ export const env: EnvironmentVariables = {
   rateLimitWindowMs: getPositiveInt("RATE_LIMIT_WINDOW_MS", 900_000),
   rateLimitMax: getPositiveInt("RATE_LIMIT_MAX", 100),
   authRateLimitMax: getPositiveInt("AUTH_RATE_LIMIT_MAX", 10),
+  seedAdminName: getOptionalEnv("SEED_ADMIN_NAME"),
+  seedAdminEmail: getOptionalEnv("SEED_ADMIN_EMAIL"),
+  seedAdminPassword: getOptionalEnv("SEED_ADMIN_PASSWORD"),
 };

@@ -7,12 +7,11 @@ import userRoutes from "./routes/user.routes";
 
 const app: Application = express();
 
+app.use(requestLogger);
 app.use(express.json());
 app.use("/auth", authRoutes);
 app.use("/users", userRoutes);
 app.use("/admin", adminRoutes);
-app.use(requestLogger);
-app.use(express.json());
 
 app.get("/health", (_request: Request, response: Response): Response => {
   return response.status(200).json({

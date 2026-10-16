@@ -1,4 +1,5 @@
 import { NextFunction, Request, Response } from "express";
+import { logger } from "../config/logger";
 
 export function requestLogger(
   req: Request,
@@ -11,8 +12,16 @@ export function requestLogger(
     const durationMs: number =
       Number(process.hrtime.bigint() - startedAt) / 1_000_000;
 
-    // TODO 3: descobrir a rota (template, sem valores reais)
-    // TODO 4: chamar logger.http(...) com method, route, statusCode e durationMs
+    const route: string = req.route
+      ? `${req.baseUrl}${req.route.path}`
+      : "(rota não encontrada)";
+
+    logger.http("requisição HTTP", {
+      method: req.method,
+      route,
+      statusCode: res.statusCode,
+      durationMs: Number(durationMs.toFixed(2)),
+    });
   });
 
   next();

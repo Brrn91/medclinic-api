@@ -3,6 +3,7 @@ import { DataSource } from "typeorm";
 
 import { env } from "../config/env";
 import { Especialidade } from "../entities/Especialidade";
+import { Medico } from "../entities/Medico";
 import { User } from "../entities/User";
 
 export const AppDataSource: DataSource = new DataSource({
@@ -12,7 +13,7 @@ export const AppDataSource: DataSource = new DataSource({
   username: env.dbUser,
   password: env.dbPassword,
   database: env.dbName,
-  entities: [User, Especialidade],
+  entities: [User, Especialidade, Medico],
   migrations: [__dirname + "/migrations/*.{ts,js}"],
   synchronize: false,
   logging: false,

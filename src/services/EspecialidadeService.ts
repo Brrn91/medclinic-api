@@ -6,18 +6,26 @@ import { UpdateEspecialidadeDTO } from "../dtos/especialidade/UpdateEspecialidad
 import { Especialidade } from "../entities/Especialidade";
 import { AppError } from "../errors/AppError";
 import { EspecialidadeRepository } from "../repositories/EspecialidadeRepository";
-import { isUniqueViolation } from "../utils/database-errors";
+import { MedicoRepository } from "../repositories/MedicoRepository";
+import {
+  isForeignKeyViolation,
+  isUniqueViolation,
+} from "../utils/database-errors";
 import { buildPaginatedResponse, getOffset } from "../utils/pagination";
 
 const NOME_DUPLICADO_MESSAGE: string =
   "Já existe uma especialidade com este nome.";
 const NAO_ENCONTRADA_MESSAGE: string = "Especialidade não encontrada.";
+const EM_USO_MESSAGE: string =
+  "Não é possível remover a especialidade: existem médicos vinculados.";
 
 export class EspecialidadeService {
   private readonly especialidadeRepository: EspecialidadeRepository;
+  private readonly medicoRepository: MedicoRepository;
 
   public constructor() {
     this.especialidadeRepository = new EspecialidadeRepository();
+    this.medicoRepository = new MedicoRepository();
   }
 
   public async list(
@@ -85,8 +93,19 @@ export class EspecialidadeService {
   public async remove(id: string): Promise<void> {
     const especialidade: Especialidade = await this.getOrFail(id);
 
-    // TODO (feat/medicos): impedir a remoção quando houver médicos vinculados (RF01).
-    await this.especialidadeRepository.remove(especialidade);
+    if (await this.medicoRepository.existsByEspecialidadeId(id)) {
+      throw new AppError(EM_USO_MESSAGE, 409);
+    }
+
+    try {
+      await this.especialidadeRepository.remove(especialidade);
+    } catch (error: unknown) {
+      if (isForeignKeyViolation(error)) {
+        throw new AppError(EM_USO_MESSAGE, 409);
+      }
+
+      throw error;
+    }
   }
 
   private async getOrFail(id: string): Promise<Especialidade> {

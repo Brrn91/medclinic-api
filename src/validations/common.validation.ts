@@ -29,6 +29,22 @@ export const paginationQuerySchema = z.object(
   { error: "parâmetros de consulta inválidos" },
 );
 
+export const emailSchema = z
+  .string({ error: "email é obrigatório e deve ser um texto" })
+  .trim()
+  .toLowerCase()
+  .max(150, "email deve ter no máximo 150 caracteres")
+  .pipe(z.email({ error: "email inválido" }));
+
+export const telefoneSchema = z
+  .string({ error: "telefone deve ser um texto" })
+  .trim()
+  .transform((value: string): string => value.replace(/\D/g, ""))
+  .refine(
+    (value: string): boolean => /^\d{10,11}$/.test(value),
+    "telefone deve ter 10 ou 11 dígitos (DDD e número)",
+  );
+
 export function parseWith<S extends z.ZodType>(
   schema: S,
   data: unknown,

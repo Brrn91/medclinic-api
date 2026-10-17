@@ -1,8 +1,9 @@
 import { QueryFailedError } from "typeorm";
 
 const POSTGRES_UNIQUE_VIOLATION: string = "23505";
+const POSTGRES_FOREIGN_KEY_VIOLATION: string = "23503";
 
-export function isUniqueViolation(error: unknown): boolean {
+function hasPostgresCode(error: unknown, code: string): boolean {
   if (!(error instanceof QueryFailedError)) {
     return false;
   }
@@ -13,6 +14,14 @@ export function isUniqueViolation(error: unknown): boolean {
     typeof driverError === "object" &&
     driverError !== null &&
     "code" in driverError &&
-    driverError.code === POSTGRES_UNIQUE_VIOLATION
+    driverError.code === code
   );
+}
+
+export function isUniqueViolation(error: unknown): boolean {
+  return hasPostgresCode(error, POSTGRES_UNIQUE_VIOLATION);
+}
+
+export function isForeignKeyViolation(error: unknown): boolean {
+  return hasPostgresCode(error, POSTGRES_FOREIGN_KEY_VIOLATION);
 }

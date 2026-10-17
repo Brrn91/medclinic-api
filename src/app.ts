@@ -9,6 +9,7 @@ import adminRoutes from "./routes/admin.routes";
 import authRoutes from "./routes/auth.routes";
 import especialidadeRoutes from "./routes/especialidade.routes";
 import medicoRoutes from "./routes/medico.routes";
+import pacienteRoutes from "./routes/paciente.routes";
 import userRoutes from "./routes/user.routes";
 
 const app: Application = express();
@@ -23,6 +24,7 @@ app.use("/users", userRoutes);
 app.use("/admin", adminRoutes);
 app.use("/especialidades", especialidadeRoutes);
 app.use("/medicos", medicoRoutes);
+app.use("/pacientes", pacienteRoutes);
 
 app.get("/health", (_request: Request, response: Response): Response => {
   return response.status(200).json({

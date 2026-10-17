@@ -1,10 +1,10 @@
 import { NextFunction, Request, Response } from "express";
 
 import { PaginatedResponseDTO } from "../dtos/common/PaginatedResponseDTO";
-import { CreateMedicoDTO } from "../dtos/medico/CreateMedicoDTO";
-import { ListMedicosQueryDTO } from "../dtos/medico/ListMedicosQueryDTO";
-import { MedicoResponseDTO } from "../dtos/medico/MedicoResponseDTO";
-import { UpdateMedicoDTO } from "../dtos/medico/UpdateMedicoDTO";
+import { CreateMedicoDTO } from "../dtos/medicos/CreateMedicoDTO";
+import { ListMedicosQueryDTO } from "../dtos/medicos/ListMedicosQueryDTO";
+import { MedicoResponseDTO } from "../dtos/medicos/MedicoResponseDTO";
+import { UpdateMedicoDTO } from "../dtos/medicos/UpdateMedicoDTO";
 import { MedicoService } from "../services/MedicoService";
 import { idParamSchema, parseWith } from "../validations/common.validation";
 import {

@@ -5,6 +5,7 @@ import { errorMiddleware } from "./middlewares/error.middleware";
 import { notFoundMiddleware } from "./middlewares/not-found.middleware";
 import { globalRateLimiter } from "./middlewares/rate-limiter.middleware";
 import { requestLogger } from "./middlewares/request-logger.middleware";
+import { captureRouteBase } from "./middlewares/route-base.middleware";
 import adminRoutes from "./routes/admin.routes";
 import authRoutes from "./routes/auth.routes";
 import consultaRoutes from "./routes/consulta.routes";
@@ -20,13 +21,13 @@ app.use(globalRateLimiter);
 app.use(requestLogger);
 app.use(express.json());
 
-app.use("/auth", authRoutes);
-app.use("/users", userRoutes);
-app.use("/admin", adminRoutes);
-app.use("/especialidades", especialidadeRoutes);
-app.use("/medicos", medicoRoutes);
-app.use("/pacientes", pacienteRoutes);
-app.use("/consultas", consultaRoutes);
+app.use("/auth", captureRouteBase, authRoutes);
+app.use("/users", captureRouteBase, userRoutes);
+app.use("/admin", captureRouteBase, adminRoutes);
+app.use("/especialidades", captureRouteBase, especialidadeRoutes);
+app.use("/medicos", captureRouteBase, medicoRoutes);
+app.use("/pacientes", captureRouteBase, pacienteRoutes);
+app.use("/consultas", captureRouteBase, consultaRoutes);
 
 app.get("/health", (_request: Request, response: Response): Response => {
   return response.status(200).json({

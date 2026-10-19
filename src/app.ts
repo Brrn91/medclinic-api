@@ -12,6 +12,7 @@ import consultaRoutes from "./routes/consulta.routes";
 import especialidadeRoutes from "./routes/especialidade.routes";
 import medicoRoutes from "./routes/medico.routes";
 import pacienteRoutes from "./routes/paciente.routes";
+import relatorioRoutes from "./routes/relatorio.routes";
 import userRoutes from "./routes/user.routes";
 
 const app: Application = express();
@@ -28,6 +29,7 @@ app.use("/especialidades", captureRouteBase, especialidadeRoutes);
 app.use("/medicos", captureRouteBase, medicoRoutes);
 app.use("/pacientes", captureRouteBase, pacienteRoutes);
 app.use("/consultas", captureRouteBase, consultaRoutes);
+app.use("/relatorios", captureRouteBase, relatorioRoutes);
 
 app.get("/health", (_request: Request, response: Response): Response => {
   return response.status(200).json({

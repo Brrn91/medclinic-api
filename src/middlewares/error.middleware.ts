@@ -1,6 +1,9 @@
 import { NextFunction, Request, Response } from "express";
 
+import { logger } from "../config/logger";
 import { AppError } from "../errors/AppError";
+import { getErrorDetails } from "../utils/error-details";
+import { getRouteTemplate } from "../utils/request";
 
 interface ErrorResponse {
   status: "error";
@@ -20,11 +23,23 @@ function isJsonParseError(error: unknown): error is JsonParseError {
 
 export function errorMiddleware(
   error: unknown,
-  _request: Request,
+  request: Request,
   response: Response<ErrorResponse>,
   _next: NextFunction,
 ): Response<ErrorResponse> {
+  const context = {
+    method: request.method,
+    route: getRouteTemplate(request),
+    userId: request.user?.id,
+  };
+
   if (error instanceof AppError) {
+    if (error.statusCode >= 500) {
+      logger.error(error.message, { ...context, statusCode: error.statusCode });
+    } else {
+      logger.warn(error.message, { ...context, statusCode: error.statusCode });
+    }
+
     return response.status(error.statusCode).json({
       status: "error",
       message: error.message,
@@ -32,13 +47,22 @@ export function errorMiddleware(
   }
 
   if (isJsonParseError(error)) {
+    logger.warn("Corpo da requisição em formato JSON inválido", {
+      ...context,
+      statusCode: 400,
+    });
+
     return response.status(400).json({
       status: "error",
       message: "Corpo da requisição em formato JSON inválido.",
     });
   }
 
-  console.error("Erro não tratado:", error);
+  logger.error("Erro não tratado", {
+    ...context,
+    statusCode: 500,
+    ...getErrorDetails(error),
+  });
 
   return response.status(500).json({
     status: "error",

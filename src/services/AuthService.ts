@@ -1,3 +1,4 @@
+import { logger } from "../config/logger";
 import { AuthResponseDTO } from "../dtos/auth/AuthResponseDTO";
 import { LoginDTO } from "../dtos/auth/LoginDTO";
 import { RegisterUserDTO } from "../dtos/auth/RegisterUserDTO";
@@ -45,7 +46,6 @@ export class AuthService {
       {
         name,
         email,
-        password,
       },
       passwordHash,
     );
@@ -78,6 +78,11 @@ export class AuthService {
 
     const token: string = generateToken({
       id: user.id,
+      role: user.role,
+    });
+
+    logger.info("login realizado com sucesso", {
+      userId: user.id,
       role: user.role,
     });
 

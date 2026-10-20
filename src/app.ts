@@ -1,6 +1,7 @@
 import express, { Application, Request, Response } from "express";
 
 import { corsMiddleware } from "./config/cors";
+import { swaggerHandlers } from "./config/swagger";
 import { errorMiddleware } from "./middlewares/error.middleware";
 import { notFoundMiddleware } from "./middlewares/not-found.middleware";
 import { globalRateLimiter } from "./middlewares/rate-limiter.middleware";
@@ -30,6 +31,8 @@ app.use("/medicos", captureRouteBase, medicoRoutes);
 app.use("/pacientes", captureRouteBase, pacienteRoutes);
 app.use("/consultas", captureRouteBase, consultaRoutes);
 app.use("/relatorios", captureRouteBase, relatorioRoutes);
+
+app.use("/api-docs", ...swaggerHandlers);
 
 app.get("/health", (_request: Request, response: Response): Response => {
   return response.status(200).json({

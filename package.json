@@ -10,7 +10,9 @@
     "migration:generate": "tsx ./node_modules/typeorm/cli.js migration:generate -d src/database/data-source.ts",
     "migration:run": "tsx ./node_modules/typeorm/cli.js migration:run -d src/database/data-source.ts",
     "migration:revert": "tsx ./node_modules/typeorm/cli.js migration:revert -d src/database/data-source.ts",
-    "seed:admin": "tsx src/database/seeds/seed-admin.ts"
+    "seed:admin": "tsx src/database/seeds/seed-admin.ts",
+    "test": "jest",
+    "test:coverage": "jest --coverage"
   },
   "keywords": [],
   "author": "Lucas Bruno da Costa Mafra",

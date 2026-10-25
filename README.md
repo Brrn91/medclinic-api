@@ -18,7 +18,7 @@ Clínicas pequenas costumam controlar médicos, pacientes e agenda em planilhas,
 
 ## Tecnologias
 
-Node.js · TypeScript · Express 5 · PostgreSQL · TypeORM (migrations) · JWT e bcrypt · zod · Swagger UI (OpenAPI 3) · Winston · cors · express-rate-limit
+Node.js · TypeScript · Express 5 · PostgreSQL · TypeORM (migrations) · JWT e bcrypt · zod · Swagger UI (OpenAPI 3) · Winston · cors · express-rate-limit · Jest (ts-jest)
 
 ## Arquitetura
 
@@ -120,6 +120,11 @@ Gravados no console e em `logs/combined.log` (tudo, em JSON) e `logs/error.log` 
 
 Importe os arquivos de `docs/postman/` e execute a collection (mais de 200 asserções). Para rodá-la mais de uma vez em 15 minutos, use `RATE_LIMIT_MAX=1000` no `.env`.
 
+## Testes automatizados (Jest)
+
+Testes unitários com Jest e ts-jest, com os repositórios simulados (mocks), sem acessar o banco de dados. Cobrem o serviço de autenticação e os serviços de consultas e de especialidades: regras de negócio, conflito de horário, transições de status e tradução de erros do banco.
+
+Execute com `npm test` (ou `npm run test:coverage`, para o relatório de cobertura).
 ## Gestão do projeto
 
 - **Trello:** https://trello.com/b/86WSAhUo/medclinic-api

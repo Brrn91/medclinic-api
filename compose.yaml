@@ -40,6 +40,16 @@ services:
       db:
         condition: service_healthy
 
+  seed:
+    <<: *api-base
+    restart: "no"
+    command:
+      - node
+      - dist/database/seeds/seed-admin.js
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+
   api:
     <<: *api-base
     restart: unless-stopped
@@ -48,7 +58,7 @@ services:
     depends_on:
       db:
         condition: service_healthy
-      migrate:
+      seed:
         condition: service_completed_successfully
 
 volumes:

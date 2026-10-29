@@ -1,3 +1,14 @@
+x-api-base: &api-base
+  image: medclinic-api:latest
+  build:
+    context: .
+    dockerfile: Dockerfile
+  env_file:
+    - .env
+  environment:
+    DB_HOST: db
+    PORT: 3000
+
 services:
   db:
     image: postgres:16-alpine
@@ -16,21 +27,29 @@ services:
       timeout: 5s
       retries: 10
 
+  migrate:
+    <<: *api-base
+    restart: "no"
+    command:
+      - node
+      - ./node_modules/typeorm/cli.js
+      - migration:run
+      - -d
+      - dist/database/data-source.js
+    depends_on:
+      db:
+        condition: service_healthy
+
   api:
-    build:
-      context: .
-      dockerfile: Dockerfile
+    <<: *api-base
     restart: unless-stopped
-    env_file:
-      - .env
-    environment:
-      DB_HOST: db
-      PORT: 3000
     ports:
       - "127.0.0.1:3000:3000"
     depends_on:
       db:
         condition: service_healthy
+      migrate:
+        condition: service_completed_successfully
 
 volumes:
   postgres_data:

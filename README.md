@@ -1,177 +1,194 @@
 # MedClinic API
 
-API REST para o gerenciamento de uma clínica médica de pequeno porte: especialidades, médicos, pacientes, consultas e relatórios, com autenticação JWT e controle de acesso por perfil (RBAC). Projeto avaliativo do curso de Desenvolvimento Back-End Node (SCTEC).
+API REST para o gerenciamento de uma clínica médica de pequeno porte: autenticação com perfis de acesso, cadastro de especialidades, médicos e pacientes, agendamento de consultas e relatórios gerenciais.
 
-**Links:** [API em produção](https://medclinic-api-fui6.onrender.com) | [Documentação Swagger](https://medclinic-api-fui6.onrender.com/api-docs/) | [Quadro no Trello](https://trello.com/b/86WSAhUo/medclinic-api) | [Vídeo de apresentação](PREENCHER_LINK_DO_VIDEO)
+> Projeto avaliativo do Módulo 02 (Back-End Node, SCTEC), que dá continuidade à etapa de autenticação e autorização.
 
 ## Problema que resolve
 
-Clínicas pequenas costumam controlar médicos, pacientes e agenda em planilhas, o que gera consultas em duplicidade para o mesmo médico, dados inconsistentes e nenhuma visão gerencial. A MedClinic API centraliza tudo em um banco relacional e aplica as regras no servidor: impede agendamentos sobrepostos, garante CRM e CPF únicos e válidos, controla o ciclo da consulta e restringe cada ação ao perfil autorizado.
-
-## Funcionalidades
-
-- Autenticação com JWT (com expiração) e perfis Administrador e Atendente (RBAC)
-- CRUD de especialidades, médicos e pacientes
-- Agendamento, atendimento e cancelamento de consultas, com checagem de disponibilidade do médico
-- Filtros e paginação (`page` e `limit`) nas listagens
-- Relatórios gerenciais (somente Administrador)
-- Documentação Swagger, logs com Winston, CORS e rate limiting
-- Segurança: senhas com hash (bcrypt), segredos fora do código (`.env`) e validação de toda entrada com zod
+Uma clínica precisa controlar quem acessa o sistema e o que cada pessoa pode fazer, e organizar médicos, pacientes e consultas sem conflitos de horário. A API centraliza essas regras: o **Administrador** gerencia o cadastro da clínica e consulta relatórios; o **Atendente** cuida da operação diária (pacientes e consultas).
 
 ## Tecnologias
 
-Node.js · TypeScript · Express 5 · PostgreSQL · TypeORM (migrations) · JWT e bcrypt · zod · Swagger UI (OpenAPI 3) · Winston · cors · express-rate-limit · Jest (ts-jest) · Docker e Docker Compose
+- **Node.js 22**, **TypeScript** (tipagem estática em todas as camadas) e **Express**
+- **TypeORM** + **PostgreSQL 16** (migrations versionadas)
+- **JWT** (`jsonwebtoken`) e **bcrypt** para autenticação e hash de senha
+- **RBAC** (perfis `ADMIN` e `ATTENDANT`)
+- **zod** para validação de entrada
+- **Winston** para logs, **CORS** configurado por ambiente e **express-rate-limit**
+- **Swagger UI** para a documentação interativa
+- **Jest** + **ts-jest** (testes unitários)
+- **Docker** / **Docker Compose** e deploy no **Render**
 
 ## Arquitetura
 
-MVC em camadas: cada camada conversa apenas com a seguinte, e todo erro chega ao `errorMiddleware`, que responde em JSON padronizado.
-
-```mermaid
-flowchart TD
-    A[Cliente HTTP] --> B[CORS]
-    B --> C[Rate limiting]
-    C --> D[Logger de requisições]
-    D --> E[Route]
-    E --> F[Middlewares: JWT e RBAC]
-    F --> G[Controller: valida a entrada com zod]
-    G --> H[Service: regras de negócio]
-    H --> I[Repository: TypeORM]
-    I --> J[(PostgreSQL)]
+```
+Cliente HTTP → Route → Middlewares (CORS, rate limit, auth, RBAC)
+             → Controller → Service → Repository (TypeORM) → PostgreSQL
 ```
 
-Pastas em `src/`: `routes`, `middlewares`, `controllers`, `services`, `repositories`, `entities`, `dtos`, `validations`, `config`, `docs` (OpenAPI), `database` (migrations e seed) e `utils`.
+| Camada                      | Responsabilidade                                                                        |
+| --------------------------- | --------------------------------------------------------------------------------------- |
+| `routes`                    | Define os endpoints e aplica os middlewares                                             |
+| `middlewares`               | Autenticação (JWT), autorização (RBAC), logs de requisição, tratamento central de erros |
+| `controllers`               | Recebem a requisição HTTP e devolvem a resposta                                         |
+| `services`                  | Regras de negócio (ex.: conflito de horário em consultas)                               |
+| `repositories`              | Acesso ao banco via TypeORM                                                             |
+| `entities`                  | Classes decoradas do TypeORM                                                            |
+| `database`                  | `DataSource`, migrations e seed                                                         |
+| `dtos` / `utils` / `errors` | Contratos de entrada e saída, hash, JWT e `AppError`                                    |
 
 ## Como executar
 
-**Pré-requisitos:** Node.js 20.19+, 22.13+ ou 24.11+ (faixas exigidas pelo TypeORM) e PostgreSQL em execução. Para a execução com Docker, veja a seção seguinte.
+### Opção 1: Docker (recomendada)
+
+Pré-requisito: Docker com Compose.
 
 ```bash
 git clone https://github.com/Brrn91/medclinic-api.git
 cd medclinic-api
-npm ci
-cp .env.example .env          # preencha DB_PASSWORD e JWT_SECRET
-psql -U postgres -c "CREATE DATABASE medclinic;"
-npm run migration:run         # cria as tabelas (migrations do TypeORM)
-npm run seed:admin            # cria o administrador inicial
-npm run dev                   # http://localhost:3000
+cp .env.example .env
+docker compose up --build
 ```
 
-Produção: `npm run build` e `npm start`. Para desfazer a última migration: `npm run migration:revert`.
+O `docker compose up` executa, em ordem:
 
-> Avisos de `allow-scripts` no `npm ci` não bloqueiam. Se o hash de senha falhar, rode `npm approve-scripts bcrypt`.
+1. `db`: PostgreSQL com volume persistente (`postgres_data`);
+2. `migrate`: cria o schema (migrations do TypeORM);
+3. `seed`: cria o administrador inicial (idempotente: não duplica);
+4. `api`: sobe a aplicação em `http://localhost:3000`.
 
-## Executando com Docker
+Se as migrations ou o seed falharem, a API **não sobe**. Veja o motivo com `docker compose logs migrate` ou `docker compose logs seed`.
 
-Sobe a API e um PostgreSQL 16 com um único comando. Requer Docker com Compose.
+Para recomeçar do zero (apaga os dados do banco): `docker compose down -v`.
+
+### Opção 2: execução local
+
+Pré-requisitos: Node.js 22+ e PostgreSQL.
 
 ```bash
-cp .env.example .env          # preencha DB_PASSWORD e JWT_SECRET
-docker compose up --build -d
-docker compose exec api node ./node_modules/typeorm/cli.js migration:run -d dist/database/data-source.js
-docker compose exec api node dist/database/seeds/seed-admin.js
+npm install
+cp .env.example .env        # preencha com as suas credenciais (DB_HOST=localhost)
+psql -U postgres -c "CREATE DATABASE medclinic;"
+npm run migration:run       # cria as tabelas
+npm run seed:admin          # cria o administrador inicial
+npm run dev                 # desenvolvimento (tsx watch)
 ```
 
-- A API fica em `http://localhost:3000` e o Swagger em `http://localhost:3000/api-docs/`.
-- O compose define `DB_HOST=db` automaticamente; os demais valores vêm do `.env`.
-- As migrations e o seed rodam **dentro do contêiner**, usando o código compilado (`dist/`), porque a imagem de produção não inclui as dependências de desenvolvimento (como o `tsx`).
-- O banco não é exposto ao host e seus dados ficam no volume `postgres_data`.
-- Logs: `docker compose logs -f api`. Para parar: `docker compose down` (use `-v` para apagar também o volume do banco).
+Produção local: `npm run build && npm start`.
 
-### Variáveis de ambiente
+## Variáveis de ambiente
 
-Todas estão em `.env.example` (o `.env` real não é versionado). `RATE_LIMIT_*`, `LOG_LEVEL` e `SEED_*` são opcionais; a coluna de padrão mostra o valor usado pelo código quando a variável não é definida.
+Todas ficam no `.env` (modelo em `.env.example`; o `.env` não é versionado).
 
-| Variável                                                        | Padrão do código                                                     | Descrição                                                     |
-| --------------------------------------------------------------- | -------------------------------------------------------------------- | ------------------------------------------------------------- |
-| `PORT`                                                          | (obrigatória; exemplo `3000`)                                        | Porta da API                                                  |
-| `DB_HOST`, `DB_PORT`, `DB_NAME`, `DB_USER`, `DB_PASSWORD`       | (obrigatórias; exemplo `localhost`, `5432`, `medclinic`, `postgres`) | Conexão com o PostgreSQL                                      |
-| `JWT_SECRET`, `JWT_EXPIRES_IN`                                  | (obrigatórias; exemplo `1h`)                                         | Assinatura e validade do token                                |
-| `CORS_ORIGINS`                                                  | (obrigatória)                                                        | Origens permitidas, separadas por vírgula (`*` é recusado)    |
-| `RATE_LIMIT_WINDOW_MS`, `RATE_LIMIT_MAX`, `AUTH_RATE_LIMIT_MAX` | `900000`, `100`, `10`                                                | Janela (ms), limite global e limite de login/cadastro, por IP |
-| `LOG_LEVEL`                                                     | `info`                                                               | `error`, `warn`, `info`, `http` ou `debug`                    |
-| `SEED_ADMIN_NAME`, `SEED_ADMIN_EMAIL`, `SEED_ADMIN_PASSWORD`    | (obrigatórias para rodar o seed)                                     | Administrador criado pelo seed (senha com 8+ caracteres)      |
+| Variável                                                     | Descrição                                                                  |
+| ------------------------------------------------------------ | -------------------------------------------------------------------------- |
+| `PORT`                                                       | Porta da API                                                               |
+| `DB_HOST`, `DB_PORT`, `DB_NAME`, `DB_USER`, `DB_PASSWORD`    | Conexão com o PostgreSQL (no Docker, `DB_HOST` é sobrescrito para `db`)    |
+| `JWT_SECRET`, `JWT_EXPIRES_IN`                               | Segredo e expiração do token (ex.: `1h`)                                   |
+| `SEED_ADMIN_NAME`, `SEED_ADMIN_EMAIL`, `SEED_ADMIN_PASSWORD` | Dados do administrador inicial                                             |
+| `LOG_LEVEL`                                                  | Nível de log (`error`, `warn`, `info`, `http`, `debug`) <<confirmar nome>> |
+| `CORS_ORIGINS`                                               | Origens permitidas, separadas por vírgula <<confirmar nome>>               |
+| `AUTH_RATE_LIMIT_MAX` e variáveis de janela/limite global    | Rate limiting (ver `.env.example`)                                         |
 
-O `.env.example` já traz limites mais altos (`1000` e `100`) para facilitar testes manuais. Para observar o `429 Too Many Requests` rapidamente, use `AUTH_RATE_LIMIT_MAX=5` no seu `.env`.
+## Banco de dados
 
-### Credenciais de teste
+O schema é criado **somente por migrations** (`src/database/migrations`):
 
-| Perfil               | E-mail                               | Senha        |
-| -------------------- | ------------------------------------ | ------------ |
-| Administrador (seed) | `admin@medclinic.com`                | `senha12345` |
-| Atendente            | cadastre-se em `POST /auth/register` | a sua        |
+```bash
+npm run migration:run       # aplica
+npm run migration:revert    # desfaz a última
+```
 
-São credenciais apenas de desenvolvimento: troque-as em qualquer ambiente real.
+Tabelas: `users`, `especialidades`, `medicos`, `pacientes`, `consultas` e `migrations`.
 
-## Documentação da API (Swagger)
+## Perfis de acesso e administrador inicial
 
-Com a API rodando: **<http://localhost:3000/api-docs>**. Em produção: [medclinic-api-fui6.onrender.com/api-docs](https://medclinic-api-fui6.onrender.com/api-docs/). Para testar as rotas protegidas, faça `POST /auth/login`, copie o `token`, clique em **Authorize** e cole o token.
+| Perfil      | Acesso                                                                                                                          |
+| ----------- | ------------------------------------------------------------------------------------------------------------------------------- |
+| `ADMIN`     | Completo: cadastro de especialidades e médicos, remoção de pacientes, relatórios                                                |
+| `ATTENDANT` | Operacional: consulta especialidades e médicos; cadastra e atualiza pacientes; agenda, registra atendimento e cancela consultas |
 
-## Deploy
+Todo usuário cadastrado em `POST /auth/register` nasce como `ATTENDANT`. O administrador inicial é criado pelo seed com os valores do `.env.example`:
 
-A API está publicada no Render: <https://medclinic-api-fui6.onrender.com>. Se a instância estiver em repouso, a primeira requisição pode demorar cerca de um minuto até a aplicação acordar.
+- **E-mail:** `admin@medclinic.com`
+- **Senha:** `senha12345`
 
-## Endpoints e perfis de acesso
+> Esses valores são apenas para testes locais. Em ambiente publicado, defina uma senha própria em `SEED_ADMIN_PASSWORD`.
 
-Perfis: **ADMIN** (acesso completo) e **ATTENDANT** (operacional). Rotas protegidas exigem `Authorization: Bearer <token>`. Os detalhes de cada rota (parâmetros, corpos e respostas) estão no Swagger.
+## Endpoints
 
-| Módulo                   | Rotas                                                                                                                               | Perfis               |
-| ------------------------ | ----------------------------------------------------------------------------------------------------------------------------------- | -------------------- |
-| Auth                     | `POST /auth/register` (cria Atendente), `POST /auth/login`                                                                          | Público              |
-| Usuário                  | `GET /users/me`                                                                                                                     | Qualquer autenticado |
-| Especialidades e médicos | `GET /` e `GET /:id`                                                                                                                | Admin e Atendente    |
-|                          | `POST`, `PUT /:id`, `DELETE /:id`                                                                                                   | Admin                |
-| Pacientes                | `GET /`, `GET /:id`, `POST`, `PUT /:id`                                                                                             | Admin e Atendente    |
-|                          | `DELETE /:id`                                                                                                                       | Admin                |
-| Consultas                | `GET /`, `GET /:id`, `POST`, `PATCH /:id/atendimento`, `PATCH /:id/cancelamento`                                                    | Admin e Atendente    |
-| Relatórios               | `GET /relatorios/consultas-por-status`, `/consultas-por-medico`, `/medicos-por-especialidade`, `/pacientes-com-consultas-agendadas` | Admin                |
-| Sistema                  | `GET /health`, `GET /api-docs` (públicas), `GET /admin/ping` (Admin)                                                                |                      |
+Todas as rotas, exceto as públicas, exigem `Authorization: Bearer <token>`. As listagens aceitam paginação (`?page=1&limit=10`) e retornam metadados (total, página atual, limite e total de páginas).
 
-Prefixos: `/especialidades`, `/medicos`, `/pacientes` e `/consultas`.
+| Método e rota                                               | Descrição                        | Acesso            |
+| ----------------------------------------------------------- | -------------------------------- | ----------------- |
+| `POST /auth/register`                                       | Cadastro de usuário              | Pública           |
+| `POST /auth/login`                                          | Login e emissão do JWT           | Pública           |
+| `GET /users/me`                                             | Dados do usuário autenticado     | Autenticado       |
+| `GET /health`                                               | Verificação de saúde             | Pública           |
+| `GET /api-docs`                                             | Swagger UI                       | Pública           |
+| `GET /especialidades`, `GET /especialidades/:id`            | Listar e consultar               | Admin e Atendente |
+| `POST`, `PUT`, `DELETE /especialidades`                     | Cadastrar, atualizar, remover    | Admin             |
+| `GET /medicos`, `GET /medicos/:id`                          | Listar (com filtros) e consultar | Admin e Atendente |
+| `POST`, `PUT`, `DELETE /medicos`                            | Cadastrar, atualizar, remover    | Admin             |
+| `GET /pacientes`, `GET /pacientes/:id`                      | Listar (com filtros) e consultar | Admin e Atendente |
+| `POST /pacientes`, `PUT /pacientes/:id`                     | Cadastrar e atualizar            | Admin e Atendente |
+| `DELETE /pacientes/:id`                                     | Remover                          | Admin             |
+| `GET /consultas`, `GET /consultas/:id`                      | Listar (com filtros) e consultar | Admin e Atendente |
+| `POST /consultas`                                           | Agendar consulta                 | Admin e Atendente |
+| `PATCH /consultas/:id/atendimento`                          | Registrar atendimento            | Admin e Atendente |
+| `PATCH /consultas/:id/cancelamento`                         | Cancelar consulta                | Admin e Atendente |
+| `GET /relatorios/...` <<liste os relatórios implementados>> | Relatórios gerenciais            | Admin             |
 
-## Regras de negócio
+Códigos de erro padronizados em JSON: `400` (validação), `401` (não autenticado), `403` (sem permissão), `404`, `409` (conflito/duplicidade), `429` (limite de requisições) e `500`.
 
-- **Validação e unicidade:** nome da especialidade único; CRM único no formato `12345/SC`; CPF único e válido (dígitos verificadores); e-mail e data de nascimento validados.
-- **Vínculos:** o médico exige uma especialidade existente. Não é possível remover especialidade com médicos, nem médico ou paciente com consultas (409).
-- **Agendamento:** horário futuro; cada consulta ocupa 30 minutos do médico, e a sobreposição retorna 409 (verificação transacional, com lock por médico).
-- **Status:** `agendada` vira `realizada` (exige observações) ou `cancelada`. Consultas finalizadas não podem ser alteradas (409), e cancelar libera o horário.
-- **Listagens:** `page` (padrão 1) e `limit` (padrão 10, máximo 100), com `meta` (`total`, `page`, `limit`, `totalPages`).
-- **Erros:** toda falha responde `{ "status": "error", "message": "..." }`, com os códigos 400, 401, 403, 404, 409, 429 e 500.
+## Documentação Swagger
+
+Com a API em execução: **http://localhost:3000/api-docs** <<confirmar rota>>. Use o botão **Authorize** para informar o token JWT e testar as rotas protegidas.
 
 ## Logs (Winston)
 
-Gravados no console e em `logs/combined.log` (tudo, em JSON) e `logs/error.log` (só erros). A pasta `logs/` é criada automaticamente e não é versionada. O nível mínimo vem de `LOG_LEVEL` (com `http`, cada requisição aparece com método, rota, status e tempo). São registrados requisições, autenticação, acessos negados, erros, rate limit e operações de consulta. Senhas, tokens, CPF e observações clínicas nunca vão para o log. No Docker, os arquivos ficam dentro do contêiner; use `docker compose logs -f api` para acompanhar.
+- Console e arquivos: `logs/combined.log` (todos os níveis) e `logs/error.log` (erros). A pasta `logs/` não é versionada.
+- Nível configurável por `LOG_LEVEL`.
+- São registrados: cada requisição (método, rota, status, tempo), eventos de autenticação, acessos negados, erros tratados, avisos de rate limit e operações de negócio.
+- Senhas, hashes e tokens **não** são registrados.
+- No Render e no Docker, o disco do contêiner é efêmero: acompanhe os logs pelo console (`docker compose logs api` ou painel do Render).
 
-## Testes automatizados (Jest)
+## Segurança
 
-32 testes unitários em 3 suítes, com Jest e ts-jest e os repositórios simulados (mocks), sem acessar o banco de dados. Cobrem o serviço de autenticação e os serviços de consultas e de especialidades: regras de negócio, conflito de horário, transições de status e tradução de erros do banco.
+- Senhas com hash (bcrypt) e JWT com expiração.
+- **CORS** com origens explícitas definidas por ambiente; origens não autorizadas são bloqueadas.
+- **Rate limiting** por IP: limite global e limite mais restritivo para `POST /auth/login` e `POST /auth/register` (resposta `429` em JSON, com aviso no log).
+
+## Testes
 
 ```bash
-npm test                 # executa os testes
-npm run test:coverage    # relatório de cobertura
+npm test
 ```
 
-## Testes com Postman
+Testes unitários com Jest e ts-jest, com repositories simulados (sem acessar o banco real), cobrindo o serviço de autenticação e serviços de domínio.
 
-Importe os arquivos de `docs/postman/` e execute a collection (mais de 200 asserções). Para rodá-la mais de uma vez em 15 minutos, use `RATE_LIMIT_MAX=1000` no `.env`.
+## Deploy
 
-## Gestão do projeto
+Aplicação publicada no Render como Web Service, conectada a um PostgreSQL gerenciado, com as variáveis de ambiente configuradas na plataforma.
 
-- **Trello:** <https://trello.com/b/86WSAhUo/medclinic-api>
-- **Git:** uma branch por tarefa (`feat/*`, `fix/*`, `docs/*`) a partir da `develop`, integrada por Pull Request com commit de merge (as branches são mantidas), com commits semânticos. A `main` recebe a `develop` nas entregas.
-- **Principais branches:** `feat/setup-projeto`, `feat/rbac`, `feat/winston-logger`, `feat/cors-rate-limit`, `feat/seed-admin`, `feat/especialidades`, `feat/medicos`, `feat/pacientes`, `feat/consultas`, `feat/relatorios`, `feat/swagger-docs`, `feat/jest-tests`, `fix/audit-proxy-addr`, `fix/audit-body-parser`, `docs/readme-final` e `docs/readme-completo`.
+- **API:** <<URL do Render>>
+- **Swagger:** <<URL do Render>>/api-docs
 
-## Vídeo de apresentação
+## Organização do projeto
 
-[Assista ao vídeo do projeto](PREENCHER_LINK_DO_VIDEO)
+- **Quadro Kanban (Trello):** <<link público do quadro>>
+- **Git-flow:** `main` (versão final), `develop` (integração) e branches `feat/*`, `fix/*` e `docs/*` criadas a partir da `develop`, uma por tarefa, mescladas via Pull Request e mantidas após o merge. Exemplos: `feat/winston-logger`, `feat/cors-rate-limit`, `feat/medicos`, `feat/pacientes`, `feat/consultas`, `fix/docker-migrations`, `docs/readme-completo`. A lista completa está na aba _Branches_ do GitHub.
+- **Commits semânticos:** `feat:`, `fix:`, `docs:`, `refactor:`.
+- **Vídeo de apresentação:** <<link do vídeo>>
 
 ## Melhorias futuras
 
-- Executar as migrations automaticamente na subida do contêiner, sem comando manual
-- Perfil Médico (o diagnóstico seria registrado só por quem atende) e trilha de auditoria
-- Reagendamento de consultas e duração configurável por médico ou especialidade
-- Fuso horário da clínica configurável e rotação dos arquivos de log
-- Refresh token e revogação de sessões
+- Tratar `SIGTERM`/`SIGINT` no servidor (graceful shutdown) para encerrar requisições em andamento e fechar a conexão com o banco antes de sair.
+- Adicionar `healthcheck` à API no Compose para usar `docker compose up --wait`.
+- Refresh token e revogação de tokens.
+- Testes de integração com banco real em pipeline de CI.
 
 ## Autor
 
-Lucas Bruno da Costa Mafra · [github.com/Brrn91](https://github.com/Brrn91)
+Lucas Bruno da Costa Mafra

@@ -87,9 +87,11 @@ Todas ficam no `.env` (modelo em `.env.example`; o `.env` não é versionado).
 | `DB_HOST`, `DB_PORT`, `DB_NAME`, `DB_USER`, `DB_PASSWORD`    | Conexão com o PostgreSQL (no Docker, `DB_HOST` é sobrescrito para `db`)    |
 | `JWT_SECRET`, `JWT_EXPIRES_IN`                               | Segredo e expiração do token (ex.: `1h`)                                   |
 | `SEED_ADMIN_NAME`, `SEED_ADMIN_EMAIL`, `SEED_ADMIN_PASSWORD` | Dados do administrador inicial                                             |
-| `LOG_LEVEL`                                                  | Nível de log (`error`, `warn`, `info`, `http`, `debug`) <<confirmar nome>> |
-| `CORS_ORIGINS`                                               | Origens permitidas, separadas por vírgula <<confirmar nome>>               |
-| `AUTH_RATE_LIMIT_MAX` e variáveis de janela/limite global    | Rate limiting (ver `.env.example`)                                         |
+| `LOG_LEVEL`                                                  | Nível de log (`error`, `warn`, `info`, `http`, `debug`)                    |
+| `CORS_ORIGINS`                                               | Origens permitidas, separadas por vírgula                                  |
+| `RATE_LIMIT_WINDOW_MS`                                       | Janela do rate limit, em milissegundos (padrão: 900000, ou 15 minutos)     |
+| `RATE_LIMIT_MAX`                                             | Máximo de requisições por IP na janela, para a API toda (padrão: 1000)     |
+| `AUTH_RATE_LIMIT_MAX`                                        | Máximo de requisições por IP na janela para login e cadastro (padrão: 100) |
 
 ## Banco de dados
 
@@ -114,37 +116,40 @@ Todo usuário cadastrado em `POST /auth/register` nasce como `ATTENDANT`. O admi
 - **E-mail:** `admin@medclinic.com`
 - **Senha:** `senha12345`
 
-> Esses valores são apenas para testes locais. Em ambiente publicado, defina uma senha própria em `SEED_ADMIN_PASSWORD`.
+> Esses valores são apenas para testes locais. > Valores de teste, com dados fictícios. O ambiente publicado no Render usa as mesmas credenciais..
 
 ## Endpoints
 
 Todas as rotas, exceto as públicas, exigem `Authorization: Bearer <token>`. As listagens aceitam paginação (`?page=1&limit=10`) e retornam metadados (total, página atual, limite e total de páginas).
 
-| Método e rota                                               | Descrição                        | Acesso            |
-| ----------------------------------------------------------- | -------------------------------- | ----------------- |
-| `POST /auth/register`                                       | Cadastro de usuário              | Pública           |
-| `POST /auth/login`                                          | Login e emissão do JWT           | Pública           |
-| `GET /users/me`                                             | Dados do usuário autenticado     | Autenticado       |
-| `GET /health`                                               | Verificação de saúde             | Pública           |
-| `GET /api-docs`                                             | Swagger UI                       | Pública           |
-| `GET /especialidades`, `GET /especialidades/:id`            | Listar e consultar               | Admin e Atendente |
-| `POST`, `PUT`, `DELETE /especialidades`                     | Cadastrar, atualizar, remover    | Admin             |
-| `GET /medicos`, `GET /medicos/:id`                          | Listar (com filtros) e consultar | Admin e Atendente |
-| `POST`, `PUT`, `DELETE /medicos`                            | Cadastrar, atualizar, remover    | Admin             |
-| `GET /pacientes`, `GET /pacientes/:id`                      | Listar (com filtros) e consultar | Admin e Atendente |
-| `POST /pacientes`, `PUT /pacientes/:id`                     | Cadastrar e atualizar            | Admin e Atendente |
-| `DELETE /pacientes/:id`                                     | Remover                          | Admin             |
-| `GET /consultas`, `GET /consultas/:id`                      | Listar (com filtros) e consultar | Admin e Atendente |
-| `POST /consultas`                                           | Agendar consulta                 | Admin e Atendente |
-| `PATCH /consultas/:id/atendimento`                          | Registrar atendimento            | Admin e Atendente |
-| `PATCH /consultas/:id/cancelamento`                         | Cancelar consulta                | Admin e Atendente |
-| `GET /relatorios/...` <<liste os relatórios implementados>> | Relatórios gerenciais            | Admin             |
+| Método e rota                                       | Descrição                         | Acesso            |
+| --------------------------------------------------- | --------------------------------- | ----------------- |
+| `POST /auth/register`                               | Cadastro de usuário               | Pública           |
+| `POST /auth/login`                                  | Login e emissão do JWT            | Pública           |
+| `GET /users/me`                                     | Dados do usuário autenticado      | Autenticado       |
+| `GET /health`                                       | Verificação de saúde              | Pública           |
+| `GET /api-docs`                                     | Swagger UI                        | Pública           |
+| `GET /especialidades`, `GET /especialidades/:id`    | Listar e consultar                | Admin e Atendente |
+| `POST`, `PUT`, `DELETE /especialidades`             | Cadastrar, atualizar, remover     | Admin             |
+| `GET /medicos`, `GET /medicos/:id`                  | Listar (com filtros) e consultar  | Admin e Atendente |
+| `POST`, `PUT`, `DELETE /medicos`                    | Cadastrar, atualizar, remover     | Admin             |
+| `GET /pacientes`, `GET /pacientes/:id`              | Listar (com filtros) e consultar  | Admin e Atendente |
+| `POST /pacientes`, `PUT /pacientes/:id`             | Cadastrar e atualizar             | Admin e Atendente |
+| `DELETE /pacientes/:id`                             | Remover                           | Admin             |
+| `GET /consultas`, `GET /consultas/:id`              | Listar (com filtros) e consultar  | Admin e Atendente |
+| `POST /consultas`                                   | Agendar consulta                  | Admin e Atendente |
+| `PATCH /consultas/:id/atendimento`                  | Registrar atendimento             | Admin e Atendente |
+| `PATCH /consultas/:id/cancelamento`                 | Cancelar consulta                 | Admin e Atendente |
+| `GET /relatorios/consultas-por-status`              | Consultas agrupadas por status    | Admin             |
+| `GET /relatorios/consultas-por-medico`              | Consultas por médico              | Admin             |
+| `GET /relatorios/medicos-por-especialidade`         | Médicos por especialidade         | Admin             |
+| `GET /relatorios/pacientes-com-consultas-agendadas` | Pacientes com consultas agendadas | Admin             |
 
 Códigos de erro padronizados em JSON: `400` (validação), `401` (não autenticado), `403` (sem permissão), `404`, `409` (conflito/duplicidade), `429` (limite de requisições) e `500`.
 
 ## Documentação Swagger
 
-Com a API em execução: **http://localhost:3000/api-docs** <<confirmar rota>>. Use o botão **Authorize** para informar o token JWT e testar as rotas protegidas.
+Com a API em execução: **<http://localhost:3000/api-docs>**. Use o botão **Authorize** para informar o token JWT e testar as rotas protegidas.
 
 ## Logs (Winston)
 
@@ -158,7 +163,7 @@ Com a API em execução: **http://localhost:3000/api-docs** <<confirmar rota>>. 
 
 - Senhas com hash (bcrypt) e JWT com expiração.
 - **CORS** com origens explícitas definidas por ambiente; origens não autorizadas são bloqueadas.
-- **Rate limiting** por IP: limite global e limite mais restritivo para `POST /auth/login` e `POST /auth/register` (resposta `429` em JSON, com aviso no log).
+- **Rate limiting** por IP: limite global (padrão: 1000 requisições a cada 15 minutos) e limite para `POST /auth/login` e `POST /auth/register` (padrão: 100 a cada 15 minutos). Ao exceder, a API responde `429` em JSON e registra um aviso no log.
 
 ## Testes
 
@@ -166,21 +171,26 @@ Com a API em execução: **http://localhost:3000/api-docs** <<confirmar rota>>. 
 npm test
 ```
 
-Testes unitários com Jest e ts-jest, com repositories simulados (sem acessar o banco real), cobrindo o serviço de autenticação e serviços de domínio.
+Testes unitários com Jest e ts-jest: 32 testes em 3 suítes (`AuthService`, `EspecialidadeService` e `ConsultaService`), com mocks no lugar do banco de dados. Relatório de cobertura: `npm run test:coverage`.
 
 ## Deploy
 
 Aplicação publicada no Render como Web Service, conectada a um PostgreSQL gerenciado, com as variáveis de ambiente configuradas na plataforma.
 
-- **API:** <<URL do Render>>
-- **Swagger:** <<URL do Render>>/api-docs
+- [**API (Render):**](https://medclinic-api-fui6.onrender.com) (a raiz não possui rota; use os links abaixo)
+- [**Health check:**](https://medclinic-api-fui6.onrender.com/health)
+- [**Swagger:**](https://medclinic-api-fui6.onrender.com/api-docs)
+
+> Ambiente de demonstração no plano gratuito do Render: após cerca de 15 minutos sem
+> acessos a API hiberna e a primeira requisição pode levar cerca de 1 minuto.
+> O banco gratuito do Render expira em 27/11/2026 (30 dias após a criação)
+> A forma principal de executar e avaliar o projeto é via Docker (seção "Como executar").
 
 ## Organização do projeto
 
-- **Quadro Kanban (Trello):** <<link público do quadro>>
+- [**Quadro Kanban (Trello):**](https://trello.com/b/86WSAhUo/medclinic-api)
 - **Git-flow:** `main` (versão final), `develop` (integração) e branches `feat/*`, `fix/*` e `docs/*` criadas a partir da `develop`, uma por tarefa, mescladas via Pull Request e mantidas após o merge. Exemplos: `feat/winston-logger`, `feat/cors-rate-limit`, `feat/medicos`, `feat/pacientes`, `feat/consultas`, `fix/docker-migrations`, `docs/readme-completo`. A lista completa está na aba _Branches_ do GitHub.
 - **Commits semânticos:** `feat:`, `fix:`, `docs:`, `refactor:`.
-- **Vídeo de apresentação:** <<link do vídeo>>
 
 ## Melhorias futuras
 

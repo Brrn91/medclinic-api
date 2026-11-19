@@ -173,6 +173,17 @@ npm test
 
 Testes unitários com Jest e ts-jest: 32 testes em 3 suítes (`AuthService`, `EspecialidadeService` e `ConsultaService`), com mocks no lugar do banco de dados. Relatório de cobertura: `npm run test:coverage`.
 
+### Testes de integração (PostgreSQL real)
+
+Criam dados num banco isolado e se recusam a rodar fora de um banco terminado em `_test`.
+
+```bash
+docker exec <container-do-postgres> psql -U postgres -c "CREATE DATABASE medclinic_test;"
+npm run test:integration
+```
+
+As migrations são aplicadas automaticamente no banco de teste. `npm test` continua rodando só os testes unitários, sem banco.
+
 ## Deploy
 
 Aplicação publicada no Render como Web Service, conectada a um PostgreSQL gerenciado, com as variáveis de ambiente configuradas na plataforma.

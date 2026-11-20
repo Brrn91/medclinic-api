@@ -12,7 +12,8 @@
     "migration:revert": "tsx ./node_modules/typeorm/cli.js migration:revert -d src/database/data-source.ts",
     "seed:admin": "tsx src/database/seeds/seed-admin.ts",
     "test": "jest",
-    "test:coverage": "jest --coverage"
+    "test:coverage": "jest --coverage",
+    "test:integration": "jest --config jest.integration.config.js"
   },
   "keywords": [],
   "author": "Lucas Bruno da Costa Mafra",
